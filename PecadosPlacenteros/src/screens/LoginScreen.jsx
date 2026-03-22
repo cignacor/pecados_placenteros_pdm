@@ -5,31 +5,37 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  ImageBackground,
+  Image,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ImageBackground
+      source={require('../../assets/images/background.jpg')}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.inner}
       >
         {/* Logo */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
+        <Image
+          source={require('../../assets/images/logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
 
         {/* Título */}
         <Text style={styles.title}>Bienvenido</Text>
@@ -95,19 +101,19 @@ export default function LoginScreen({ navigation }) {
         {/* Registro */}
         <View style={styles.registerContainer}>
           <Text style={styles.registerText}>¿No tienes cuenta? </Text>
-          <TouchableOpacity onPress={() => navigation?.navigate('Register')}>
+          <TouchableOpacity onPress={() => router.push('/register')}>
             <Text style={styles.registerLink}>Regístrate</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a0000',
   },
   inner: {
     flex: 1,
@@ -115,27 +121,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
   },
-  logoContainer: {
-    width: 120,
-    height: 120,
-    backgroundColor: '#1e3a2f',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  logo: {
+    width: 320,
+    height: 140,
     marginBottom: 24,
   },
   logo: {
-    width: 90,
-    height: 90,
+    width: 320,
+    height: 120,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     color: '#fff',
     marginBottom: 6,
+    letterSpacing: 1,
   },
   subtitle: {
     fontSize: 14,
+    fontFamily: 'PlayfairDisplay_400Regular',
     color: '#aaa',
     marginBottom: 32,
   },
@@ -149,6 +153,7 @@ const styles = StyleSheet.create({
   label: {
     color: '#ccc',
     fontSize: 13,
+    fontFamily: 'PlayfairDisplay_400Regular',
     marginBottom: 6,
   },
   input: {
@@ -197,7 +202,8 @@ const styles = StyleSheet.create({
   loginButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 1,
   },
   dividerContainer: {
     flexDirection: 'row',

@@ -2,14 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Reemplaza estos valores con los de tu proyecto en Firebase Console
 const firebaseConfig = {
-  apiKey: 'TU_API_KEY',
-  authDomain: 'TU_AUTH_DOMAIN',
-  projectId: 'TU_PROJECT_ID',
-  storageBucket: 'TU_STORAGE_BUCKET',
-  messagingSenderId: 'TU_MESSAGING_SENDER_ID',
-  appId: 'TU_APP_ID',
+  apiKey: "AIzaSyAYhH8equ46px676yPmHgkUaBd9q3Nyzeo",
+  authDomain: "pecadosplacenterospdm.firebaseapp.com",
+  projectId: "pecadosplacenterospdm",
+  storageBucket: "pecadosplacenterospdm.firebasestorage.app",
+  messagingSenderId: "809002572310",
+  appId: "1:809002572310:web:14956bfde9f51c0474f337"
 };
 
 const app = initializeApp(firebaseConfig);
