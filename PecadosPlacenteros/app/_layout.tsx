@@ -5,6 +5,7 @@ import 'react-native-reanimated';
 import { useFonts, PlayfairDisplay_400Regular, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { CartProvider } from '../src/context/CartContext';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -28,15 +29,17 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
+    <CartProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
+        <Stack.Screen name="admin" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+    </CartProvider>
   );
 }

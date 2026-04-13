@@ -10,14 +10,38 @@ import {
   Platform,
   ImageBackground,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { signInWithEmail, getUserProfile } from '../services/authService';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      alert('Ingresa tu correo y contraseña.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const user = await signInWithEmail(email, password);
+      const profile = await getUserProfile(user.uid);
+      if (profile?.role === 'admin') {
+        router.replace('/admin');
+      } else {
+        router.replace('/(tabs)');
+      }
+    } catch (e) {
+      alert('Correo o contraseña incorrectos.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ImageBackground
@@ -75,28 +99,12 @@ export default function LoginScreen({ navigation }) {
         </View>
 
         {/* Botón principal */}
-        <TouchableOpacity style={styles.loginButton}>
-          <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+          {loading
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+          }
         </TouchableOpacity>
-
-        {/* Divisor */}
-        <View style={styles.dividerContainer}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>O CONTINÚA CON</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Botones sociales */}
-        <View style={styles.socialContainer}>
-          <TouchableOpacity style={styles.socialButton}>
-            <Text style={styles.socialIcon}>G</Text>
-            <Text style={styles.socialText}>Google</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.socialButton}>
-            <Text style={styles.socialIcon}></Text>
-            <Text style={styles.socialText}>Apple</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Registro */}
         <View style={styles.registerContainer}>
@@ -125,10 +133,6 @@ const styles = StyleSheet.create({
     width: 320,
     height: 140,
     marginBottom: 24,
-  },
-  logo: {
-    width: 320,
-    height: 120,
   },
   title: {
     fontSize: 28,
