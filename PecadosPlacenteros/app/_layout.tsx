@@ -5,9 +5,9 @@ import 'react-native-reanimated';
 import { useFonts, PlayfairDisplay_400Regular, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { CartProvider } from '../src/context/CartContext';
+import { CartProvider } from '../src/features/cart/context/CartContext';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useColorScheme } from '@/shared/hooks/use-color-scheme';
 
 SplashScreen.preventAutoHideAsync();
 

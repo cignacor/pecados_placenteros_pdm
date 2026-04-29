@@ -1,2 +1,2 @@
-import MenuScreen from '../../src/screens/MenuScreen';
+import MenuScreen from '../../src/features/products/screens/MenuScreen';
 export default MenuScreen;

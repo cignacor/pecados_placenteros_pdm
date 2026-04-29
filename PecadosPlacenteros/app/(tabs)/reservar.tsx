@@ -1,2 +1,2 @@
-import ReservarScreen from '../../src/screens/ReservarScreen';
+import ReservarScreen from '../../src/features/reservar/screens/ReservarScreen';
 export default ReservarScreen;

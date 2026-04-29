@@ -1,2 +1,2 @@
-import CartScreen from '../../src/screens/CartScreen';
+import CartScreen from '../../src/features/cart/screens/CartScreen';
 export default CartScreen;

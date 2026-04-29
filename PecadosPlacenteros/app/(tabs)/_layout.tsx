@@ -54,7 +54,7 @@ export default function TabsLayout() {
           title: '',
           tabBarLabel: () => null,
           tabBarIcon: () => null,
-          tabBarButton: (props) => <CartButton onPress={props.onPress ?? (() => {})} />,
+          tabBarButton: (props) => <CartButton onPress={() => props.onPress?.({} as any)} />,
         }}
       />
       <Tabs.Screen

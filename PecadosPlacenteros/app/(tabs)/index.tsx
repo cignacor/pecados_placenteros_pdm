@@ -1,2 +1,2 @@
-import HomeScreen from '../../src/screens/HomeScreen';
+import HomeScreen from '../../src/features/products/screens/HomeScreen';
 export default HomeScreen;
