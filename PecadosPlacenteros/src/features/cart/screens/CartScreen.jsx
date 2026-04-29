@@ -1,20 +1,60 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Image, Alert,
+  TouchableOpacity, Image, Alert, ActivityIndicator,
 } from 'react-native';
+import { collection, addDoc } from 'firebase/firestore';
+import { auth, db } from '../../../api/firebaseConfig';
 import { useCart } from '../context/CartContext';
 import CheckoutModal from '../components/CheckoutModal';
 
 export default function CartScreen() {
-  const { items, removeItem, updateQuantity, total, count } = useCart();
+  const { items, removeItem, updateQuantity, clearCart, total, count } = useCart();
   const [checkoutVisible, setCheckoutVisible] = useState(false);
+  const [guardando, setGuardando] = useState(false);
 
-  const handleConfirmOrder = ({ address, markerCoord, paymentMethod }) => {
-    Alert.alert(
-      '¡Pedido confirmado!',
-      `Entrega en: ${address || 'ubicación en mapa'}\nPago: ${paymentMethod === 'card' ? 'Tarjeta' : 'Efectivo'}`
-    );
+  const handleConfirmOrder = async ({ address, datosExtra, markerCoord, paymentMethod, tarjeta }) => {
+    const usuario = auth.currentUser;
+    if (!usuario) {
+      Alert.alert('Sesión requerida', 'Debes iniciar sesión para realizar un pedido.');
+      return;
+    }
+
+    setGuardando(true);
+    try {
+      await addDoc(collection(db, 'pedidos'), {
+        uid: usuario.uid,
+        email: usuario.email,
+        items: items.map(i => ({
+          id: i.id,
+          name: i.name,
+          price: i.price,
+          quantity: i.quantity,
+          image: i.image || null,
+        })),
+        total,
+        direccion: address || '',
+        datosExtra: datosExtra || '',
+        coordenadas: markerCoord
+          ? { lat: markerCoord.latitude, lon: markerCoord.longitude }
+          : null,
+        metodoPago: paymentMethod,
+        tarjeta: tarjeta ? { ultimos4: tarjeta.ultimos4, titular: tarjeta.titular } : null,
+        estado: 'en proceso',
+        creadoEn: new Date().toISOString(),
+      });
+
+      clearCart();
+      Alert.alert(
+        '¡Pedido confirmado! ✦',
+        `Tu pedido está en proceso.\nEntrega en: ${address || 'ubicación en mapa'}`,
+        [{ text: '¡Perfecto!' }]
+      );
+    } catch (e) {
+      Alert.alert('Error', `No se pudo guardar el pedido: ${e.message}`);
+    } finally {
+      setGuardando(false);
+    }
   };
 
   if (items.length === 0) {
@@ -71,15 +111,22 @@ export default function CartScreen() {
           <Text style={styles.totalLabel}>Total</Text>
           <Text style={styles.totalValue}>${total.toLocaleString('es-CO')} COP</Text>
         </View>
-        <TouchableOpacity style={styles.orderButton} onPress={() => setCheckoutVisible(true)}>
-          <Text style={styles.orderButtonText}>Realizar Pedido</Text>
+        <TouchableOpacity
+          style={[styles.orderButton, guardando && { opacity: 0.6 }]}
+          onPress={() => setCheckoutVisible(true)}
+          disabled={guardando}
+        >
+          {guardando
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.orderButtonText}>Realizar Pedido</Text>
+          }
         </TouchableOpacity>
       </View>
 
       <CheckoutModal
         visible={checkoutVisible}
         onClose={() => setCheckoutVisible(false)}
-        total={total.toFixed(2)}
+        total={total.toLocaleString('es-CO')}
         onConfirm={handleConfirmOrder}
       />
     </View>

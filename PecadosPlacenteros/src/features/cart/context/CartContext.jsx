@@ -26,6 +26,8 @@ export function CartProvider({ children }) {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
   };
 
+  const clearCart = () => setItems([]);
+
   const total = items.reduce((sum, i) => {
     const price = parseFloat(i.price?.replace(/[^0-9.]/g, '')) || 0;
     return sum + price * i.quantity;
@@ -34,7 +36,7 @@ export function CartProvider({ children }) {
   const count = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, total, count }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, total, count }}>
       {children}
     </CartContext.Provider>
   );

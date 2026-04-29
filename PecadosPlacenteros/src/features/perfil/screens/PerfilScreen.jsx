@@ -13,7 +13,6 @@ import {
 } from 'firebase/auth';
 import { auth, db } from '../../../api/firebaseConfig';
 import { logout } from '../../auth/services/authService';
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const campo = (label, value) => (
   <View style={styles.campoFila} key={label}>
@@ -63,7 +62,10 @@ export default function PerfilScreen() {
   // Estados métodos de pago
   const [tarjetas, setTarjetas] = useState([]);
   const [modalTarjeta, setModalTarjeta] = useState(false);
-  const [numTarjeta, setNumTarjeta] = useState('');
+
+  // Estados pedidos
+  const [pedidos, setPedidos] = useState([]);
+  const [cargandoPedidos, setCargandoPedidos] = useState(false);  const [numTarjeta, setNumTarjeta] = useState('');
   const [titular, setTitular] = useState('');
   const [vencimiento, setVencimiento] = useState('');
   const [cvc, setCvc] = useState('');
@@ -116,11 +118,28 @@ export default function PerfilScreen() {
     }
   }, [usuario]);
 
+  // ── Cargar pedidos ──
+  const cargarPedidos = useCallback(async () => {
+    if (!usuario) return;
+    setCargandoPedidos(true);
+    try {
+      const q = query(collection(db, 'pedidos'), where('uid', '==', usuario.uid));
+      const snap = await getDocs(q);
+      const lista = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
+      setPedidos(lista);
+    } catch (e) {
+      // silencioso
+    } finally {
+      setCargandoPedidos(false);
+    }
+  }, [usuario]);
+
   useEffect(() => {
     cargarPerfil();
     cargarTarjetas();
   }, [cargarPerfil, cargarTarjetas]);
-
   const toggleSeccion = (id) => setSeccionAbierta(prev => prev === id ? null : id);
 
   // ── Guardar datos personales ──
@@ -364,6 +383,55 @@ export default function PerfilScreen() {
             <Text style={styles.mensajeVacioTexto}>No hay cupones disponibles por ahora</Text>
             <Text style={styles.mensajeVacioSub}>Pronto tendremos promociones exclusivas para ti</Text>
           </View>
+        </Seccion>
+
+        {/* ── Mis pedidos ── */}
+        <Seccion
+          icono="🧾"
+          titulo="Mis pedidos"
+          abierta={seccionAbierta === 'pedidos'}
+          onToggle={() => {
+            toggleSeccion('pedidos');
+            if (seccionAbierta !== 'pedidos') cargarPedidos();
+          }}
+        >
+          {cargandoPedidos ? (
+            <ActivityIndicator color="#cc0000" style={{ marginVertical: 16 }} />
+          ) : pedidos.length === 0 ? (
+            <View style={styles.mensajeVacio}>
+              <Text style={styles.mensajeVacioIcono}>🧾</Text>
+              <Text style={styles.mensajeVacioTexto}>Aún no tienes pedidos</Text>
+            </View>
+          ) : (
+            pedidos.map(p => (
+              <View key={p.id} style={styles.pedidoItem}>
+                <View style={styles.pedidoEncabezado}>
+                  <Text style={styles.pedidoFecha}>
+                    {new Date(p.creadoEn).toLocaleDateString('es-CO', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                    })}
+                  </Text>
+                  <View style={[
+                    styles.estadoBadge,
+                    p.estado === 'entregado' && styles.estadoEntregado,
+                    p.estado === 'cancelado' && styles.estadoCancelado,
+                  ]}>
+                    <Text style={styles.estadoTexto}>{p.estado?.toUpperCase()}</Text>
+                  </View>
+                </View>
+                <Text style={styles.pedidoItems} numberOfLines={2}>
+                  {p.items?.map(i => `${i.quantity}× ${i.name}`).join(', ')}
+                </Text>
+                <Text style={styles.pedidoTotal}>
+                  Total: ${Number(p.total).toLocaleString('es-CO')} COP
+                  {p.metodoPago === 'cash' ? '  · Efectivo' : `  · •••• ${p.tarjeta?.ultimos4 || '****'}`}
+                </Text>
+                {p.direccion ? (
+                  <Text style={styles.pedidoDireccion} numberOfLines={1}>📍 {p.direccion}</Text>
+                ) : null}
+              </View>
+            ))
+          )}
         </Seccion>
 
         <Text style={[styles.grupoLabel, { marginTop: 20 }]}>CONFIGURACIÓN DE APP</Text>
@@ -647,6 +715,23 @@ const styles = StyleSheet.create({
   mensajeVacioIcono: { fontSize: 36, marginBottom: 10 },
   mensajeVacioTexto: { color: '#ccc', fontSize: 14, fontWeight: '600', textAlign: 'center' },
   mensajeVacioSub: { color: '#555', fontSize: 12, marginTop: 6, textAlign: 'center' },
+
+  // Pedidos
+  pedidoItem: {
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#3d0000',
+  },
+  pedidoEncabezado: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  pedidoFecha: { color: '#aaa', fontSize: 12 },
+  estadoBadge: {
+    backgroundColor: '#cc0000', borderRadius: 6,
+    paddingHorizontal: 8, paddingVertical: 3,
+  },
+  estadoEntregado: { backgroundColor: '#1a6b1a' },
+  estadoCancelado: { backgroundColor: '#555' },
+  estadoTexto: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  pedidoItems: { color: '#ddd', fontSize: 13, marginBottom: 4 },
+  pedidoTotal: { color: '#cc0000', fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  pedidoDireccion: { color: '#666', fontSize: 11 },
 
   // Tarjetas
   sinTarjetas: { color: '#555', fontSize: 13, textAlign: 'center', paddingVertical: 12 },
