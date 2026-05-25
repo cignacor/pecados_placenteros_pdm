@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../../../api/firebaseConfig';
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
@@ -92,33 +92,79 @@ function formatearFecha(fecha) {
   return `${DIAS[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]}`;
 }
 
+// Calcula la hora de salida sumando 2 horas (maneja el cruce de medianoche)
+function horasSalida(horaEntrada) {
+  const [h, m] = horaEntrada.split(':').map(Number);
+  const salida = (h + 2) % 24;
+  return `${String(salida).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+// Convierte hora "HH:MM" a minutos desde medianoche (maneja 00:xx y 01:xx como >24h)
+function horaAMinutos(hora) {
+  const [h, m] = hora.split(':').map(Number);
+  const hNorm = h < 4 ? h + 24 : h;
+  return hNorm * 60 + m;
+}
+
+// Devuelve true si el horario consultado cae dentro del rango [entrada, salida) de una reserva
+function seSolapa(horaEntradaReserva, horaSalidaReserva, horaConsulta) {
+  const entrada  = horaAMinutos(horaEntradaReserva);
+  const salida   = horaAMinutos(horaSalidaReserva);
+  const consulta = horaAMinutos(horaConsulta);
+  return consulta >= entrada && consulta < salida;
+}
+
+// Genera las horas de salida válidas: mínimo 1h después, máximo 3h, hasta las 03:00
+function horasDisponiblesSalida(horaEntrada) {
+  const orden = ['18:00','19:00','20:00','21:00','22:00','23:00','00:00','01:00','02:00','03:00'];
+  if (!horaEntrada) return [];
+  const idx = orden.indexOf(horaEntrada);
+  if (idx === -1) return orden.slice(1, 4);
+  const fin = Math.min(idx + 4, orden.length);
+  return orden.slice(idx + 1, fin);
+}
+
 // ─── Componente Mesa Circular ──────────────────────────────────────────────────
-function MesaCirculo({ mesa, seleccionada, onPress }) {
+function MesaCirculo({ mesa, seleccionada, ocupada, onPress }) {
   return (
     <TouchableOpacity
-      style={[styles.mesaCirculo, seleccionada && styles.mesaSeleccionada]}
+      style={[
+        styles.mesaCirculo,
+        seleccionada && styles.mesaSeleccionada,
+        ocupada && styles.mesaOcupada,
+      ]}
       onPress={onPress}
-      activeOpacity={0.75}
+      activeOpacity={ocupada ? 1 : 0.75}
+      disabled={ocupada}
     >
-      <Text style={[styles.mesaId, seleccionada && styles.mesaIdSel]}>{mesa.id}</Text>
+      <Text style={[styles.mesaId, seleccionada && styles.mesaIdSel, ocupada && styles.mesaIdOcupada]}>
+        {mesa.id}
+      </Text>
       <Text style={[styles.mesaAsientos, seleccionada && styles.mesaAsientosSel]}>
-        {mesa.asientos} asientos
+        {ocupada ? 'ocupada' : `${mesa.asientos} asientos`}
       </Text>
     </TouchableOpacity>
   );
 }
 
 // ─── Componente Mesa Booth (rectangular) ──────────────────────────────────────
-function MesaBooth({ mesa, seleccionada, onPress }) {
+function MesaBooth({ mesa, seleccionada, ocupada, onPress }) {
   return (
     <TouchableOpacity
-      style={[styles.mesaBooth, seleccionada && styles.mesaSeleccionada]}
+      style={[
+        styles.mesaBooth,
+        seleccionada && styles.mesaSeleccionada,
+        ocupada && styles.mesaOcupada,
+      ]}
       onPress={onPress}
-      activeOpacity={0.75}
+      activeOpacity={ocupada ? 1 : 0.75}
+      disabled={ocupada}
     >
-      <Text style={[styles.mesaId, seleccionada && styles.mesaIdSel]}>{mesa.id}</Text>
+      <Text style={[styles.mesaId, seleccionada && styles.mesaIdSel, ocupada && styles.mesaIdOcupada]}>
+        {mesa.id}
+      </Text>
       <Text style={[styles.mesaAsientos, seleccionada && styles.mesaAsientosSel]}>
-        {mesa.asientos} asientos
+        {ocupada ? 'ocupada' : `${mesa.asientos} asientos`}
       </Text>
     </TouchableOpacity>
   );
@@ -132,9 +178,13 @@ export default function ReservarScreen() {
   const [mes, setMes] = useState(hoy.getMonth());
   const [diaSeleccionado, setDiaSeleccionado] = useState(hoy.getDate());
   const [horaSeleccionada, setHoraSeleccionada] = useState('19:00');
+  const [horaSalidaSeleccionada, setHoraSalidaSeleccionada] = useState('21:00');
   const [mesaSeleccionada, setMesaSeleccionada] = useState(null);
   const [comensales, setComensales] = useState(2);
   const [cargando, setCargando] = useState(false);
+  const [mesasOcupadas, setMesasOcupadas] = useState(new Set());
+  const [verificando, setVerificando] = useState(false);
+  const [reservaCreada, setReservaCreada] = useState(null); // reserva recién guardada
 
   // Grilla del calendario
   const celdas = useMemo(() => {
@@ -147,6 +197,35 @@ export default function ReservarScreen() {
   }, [anio, mes]);
 
   const fechaSeleccionada = new Date(anio, mes, diaSeleccionado);
+
+  // ── Consultar mesas ocupadas para la fecha y hora seleccionadas ──
+  const consultarDisponibilidad = useCallback(async () => {
+    const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(diaSeleccionado).padStart(2, '0')}`;
+    setVerificando(true);
+    try {
+      const q = query(collection(db, 'reservas'), where('fecha', '==', fechaStr));
+      const snap = await getDocs(q);
+      // Una mesa está ocupada si el horario seleccionado cae dentro de su rango reservado
+      const ocupadas = new Set(
+        snap.docs
+          .map(d => d.data())
+          .filter(d => seSolapa(d.hora, d.horaSalida || horasSalida(d.hora), horaSeleccionada))
+          .map(d => d.mesa)
+      );
+      setMesasOcupadas(ocupadas);
+      if (mesaSeleccionada && ocupadas.has(mesaSeleccionada.id)) {
+        setMesaSeleccionada(null);
+      }
+    } catch {
+      // silencioso — no bloquear la UI
+    } finally {
+      setVerificando(false);
+    }
+  }, [anio, mes, diaSeleccionado, horaSeleccionada]);
+
+  useEffect(() => {
+    consultarDisponibilidad();
+  }, [consultarDisponibilidad]);
 
   const esPasado = (dia) => {
     const f = new Date(anio, mes, dia);
@@ -199,25 +278,60 @@ export default function ReservarScreen() {
       return;
     }
 
+    const fechaStr = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(diaSeleccionado).padStart(2, '0')}`;
+    const horaSalida = horaSalidaSeleccionada;
+
     setCargando(true);
     try {
+      // Re-verificar disponibilidad: solo por fecha, filtrar mesa y hora en cliente
+      const qVerif = query(
+        collection(db, 'reservas'),
+        where('fecha', '==', fechaStr),
+      );
+      const snapVerif = await getDocs(qVerif);
+      const yaOcupada = snapVerif.docs
+        .map(d => d.data())
+        .some(d =>
+          d.mesa === mesaSeleccionada.id &&
+          seSolapa(d.hora, d.horaSalida || horasSalida(d.hora), horaSeleccionada)
+        );
+      if (yaOcupada) {
+        setMesasOcupadas(prev => new Set([...prev, mesaSeleccionada.id]));
+        setMesaSeleccionada(null);
+        Alert.alert(
+          'Mesa no disponible',
+          `La mesa ${mesaSeleccionada.id} ya tiene una reserva activa en ese horario. Por favor elige otra.`
+        );
+        return;
+      }
+
       await addDoc(collection(db, 'reservas'), {
         uid: usuario.uid,
         email: usuario.email,
-        fecha: `${anio}-${String(mes + 1).padStart(2, '0')}-${String(diaSeleccionado).padStart(2, '0')}`,
+        fecha: fechaStr,
         hora: horaSeleccionada,
+        horaSalida,
         mesa: mesaSeleccionada.id,
         asientos: mesaSeleccionada.asientos,
         comensales,
+        estado: 'en espera',
         creadoEn: new Date().toISOString(),
       });
-      Alert.alert(
-        '¡Reserva confirmada! ✦',
-        `Mesa ${mesaSeleccionada.id} · ${formatearFecha(fechaSeleccionada)} · ${horaSeleccionada} · ${comensales} personas`,
-        [{ text: 'Perfecto', onPress: () => setMesaSeleccionada(null) }]
-      );
+
+      // Marcar la mesa como ocupada localmente y mostrar tarjeta de estado
+      setMesasOcupadas(prev => new Set([...prev, mesaSeleccionada.id]));
+      setReservaCreada({
+        mesa: mesaSeleccionada.id,
+        fecha: formatearFecha(fechaSeleccionada),
+        hora: horaSeleccionada,
+        horaSalida,
+        comensales,
+        asientos: mesaSeleccionada.asientos,
+        estado: 'en espera',
+      });
+      setMesaSeleccionada(null);
     } catch (e) {
-      Alert.alert('Error', 'No se pudo guardar la reserva. Inténtalo de nuevo.');
+      Alert.alert('Error', e.message || 'No se pudo guardar la reserva. Inténtalo de nuevo.');
     } finally {
       setCargando(false);
     }
@@ -287,9 +401,27 @@ export default function ReservarScreen() {
           <TouchableOpacity
             key={h}
             style={[styles.chipHora, horaSeleccionada === h && styles.chipHoraActivo]}
-            onPress={() => setHoraSeleccionada(h)}
+            onPress={() => {
+              setHoraSeleccionada(h);
+              // Resetear salida al primer slot válido
+              const opciones = horasDisponiblesSalida(h);
+              if (opciones.length > 0) setHoraSalidaSeleccionada(opciones[0]);
+            }}
           >
             <Text style={[styles.textoHora, horaSeleccionada === h && styles.textoHoraActivo]}>{h}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <Text style={styles.subtituloSecundario}>Hora de salida</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horasScroll}>
+        {(horasDisponiblesSalida(horaSeleccionada) || []).map(h => (
+          <TouchableOpacity
+            key={h}
+            style={[styles.chipHora, horaSalidaSeleccionada === h && styles.chipHoraSalidaActivo]}
+            onPress={() => setHoraSalidaSeleccionada(h)}
+          >
+            <Text style={[styles.textoHora, horaSalidaSeleccionada === h && styles.textoHoraActivo]}>{h}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -299,6 +431,13 @@ export default function ReservarScreen() {
 
       <View style={styles.tarjeta}>
 
+        {verificando && (
+          <View style={styles.verificandoRow}>
+            <ActivityIndicator size="small" color="#cc0000" />
+            <Text style={styles.verificandoTexto}>Verificando disponibilidad...</Text>
+          </View>
+        )}
+
         {/* ── Zona Ventana — 5 mesas de 2 en fila ── */}
         <Text style={styles.zonaLabel}>— Zona Ventana —</Text>
         <View style={styles.filaVentana}>
@@ -307,6 +446,7 @@ export default function ReservarScreen() {
               key={mesa.id}
               mesa={mesa}
               seleccionada={mesaSeleccionada?.id === mesa.id}
+              ocupada={mesasOcupadas.has(mesa.id)}
               onPress={() => toggleMesa(mesa)}
             />
           ))}
@@ -325,6 +465,7 @@ export default function ReservarScreen() {
                 key={mesa.id}
                 mesa={mesa}
                 seleccionada={mesaSeleccionada?.id === mesa.id}
+                ocupada={mesasOcupadas.has(mesa.id)}
                 onPress={() => toggleMesa(mesa)}
               />
             ))}
@@ -338,6 +479,7 @@ export default function ReservarScreen() {
                     key={mesa.id}
                     mesa={mesa}
                     seleccionada={mesaSeleccionada?.id === mesa.id}
+                    ocupada={mesasOcupadas.has(mesa.id)}
                     onPress={() => toggleMesa(mesa)}
                   />
                 : <View key={`esp-${i}`} style={styles.espacioMesa} />
@@ -351,6 +493,7 @@ export default function ReservarScreen() {
                 key={mesa.id}
                 mesa={mesa}
                 seleccionada={mesaSeleccionada?.id === mesa.id}
+                ocupada={mesasOcupadas.has(mesa.id)}
                 onPress={() => toggleMesa(mesa)}
               />
             ))}
@@ -367,6 +510,7 @@ export default function ReservarScreen() {
               key={mesa.id}
               mesa={mesa}
               seleccionada={mesaSeleccionada?.id === mesa.id}
+              ocupada={mesasOcupadas.has(mesa.id)}
               onPress={() => toggleMesa(mesa)}
             />
           ))}
@@ -381,6 +525,10 @@ export default function ReservarScreen() {
           <View style={styles.leyendaItem}>
             <View style={[styles.puntito, { backgroundColor: '#cc0000' }]} />
             <Text style={styles.textoLeyenda}>SELECCIONADA</Text>
+          </View>
+          <View style={styles.leyendaItem}>
+            <View style={[styles.puntito, { backgroundColor: '#555' }]} />
+            <Text style={styles.textoLeyenda}>OCUPADA</Text>
           </View>
         </View>
       </View>
@@ -428,9 +576,11 @@ export default function ReservarScreen() {
           <View>
             <Text style={styles.labelResumen}>TU RESERVA</Text>
             <Text style={styles.valorResumen}>
-              {formatearFecha(fechaSeleccionada)}, {horaSeleccionada}
+              {formatearFecha(fechaSeleccionada)}
             </Text>
-            <Text style={styles.valorResumen}>Mesa {mesaSeleccionada.id}</Text>
+            <Text style={styles.valorResumen}>
+              {horaSeleccionada} – {horaSalidaSeleccionada} · Mesa {mesaSeleccionada.id}
+            </Text>
           </View>
           <View style={styles.resumenDerecha}>
             <Text style={styles.labelResumen}>PERSONAS</Text>
@@ -440,17 +590,62 @@ export default function ReservarScreen() {
         </View>
       )}
 
-      {/* ── Botón confirmar ── */}
-      <TouchableOpacity
-        style={[styles.btnConfirmar, cargando && styles.btnDeshabilitado]}
-        onPress={confirmarReserva}
-        disabled={cargando}
-      >
-        {cargando
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.textoConfirmar}>CONFIRMAR RESERVA ✦</Text>
-        }
-      </TouchableOpacity>
+      {/* ── Tarjeta de estado tras crear reserva ── */}
+      {reservaCreada && (
+        <View style={styles.reservaCreadaCard}>
+          <View style={styles.reservaCreadaHeader}>
+            <Text style={styles.reservaCreadaIcono}>📋</Text>
+            <Text style={styles.reservaCreadaTitulo}>Reserva Enviada</Text>
+            <View style={styles.estadoBadge}>
+              <Text style={styles.estadoBadgeTexto}>EN ESPERA</Text>
+            </View>
+          </View>
+
+          <Text style={styles.reservaCreadaDesc}>
+            Tu reserva fue recibida. El restaurante la confirmará pronto — puedes ver el estado actualizado en tu perfil.
+          </Text>
+
+          <View style={styles.reservaCreadaDetalle}>
+            <View style={styles.reservaCreadaFila}>
+              <Text style={styles.reservaCreadaLabel}>MESA</Text>
+              <Text style={styles.reservaCreadaValor}>{reservaCreada.mesa}</Text>
+            </View>
+            <View style={styles.reservaCreadaFila}>
+              <Text style={styles.reservaCreadaLabel}>FECHA</Text>
+              <Text style={styles.reservaCreadaValor}>{reservaCreada.fecha}</Text>
+            </View>
+            <View style={styles.reservaCreadaFila}>
+              <Text style={styles.reservaCreadaLabel}>HORARIO</Text>
+              <Text style={styles.reservaCreadaValor}>{reservaCreada.hora} – {reservaCreada.horaSalida}</Text>
+            </View>
+            <View style={styles.reservaCreadaFila}>
+              <Text style={styles.reservaCreadaLabel}>PERSONAS</Text>
+              <Text style={styles.reservaCreadaValor}>{reservaCreada.comensales} / {reservaCreada.asientos}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.btnNuevaReserva}
+            onPress={() => setReservaCreada(null)}
+          >
+            <Text style={styles.btnNuevaReservaTexto}>+ Hacer otra reserva</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── Botón confirmar (oculto si ya hay reserva creada) ── */}
+      {!reservaCreada && (
+        <TouchableOpacity
+          style={[styles.btnConfirmar, cargando && styles.btnDeshabilitado]}
+          onPress={confirmarReserva}
+          disabled={cargando}
+        >
+          {cargando
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.textoConfirmar}>CONFIRMAR RESERVA ✦</Text>
+          }
+        </TouchableOpacity>
+      )}
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -459,7 +654,7 @@ export default function ReservarScreen() {
 
 // ─── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#1a0000' },
+  scroll: { flex: 1, backgroundColor: '#1b0101ff' },
   contenido: { padding: 20, paddingTop: 16 },
 
   // Encabezados
@@ -489,6 +684,8 @@ const styles = StyleSheet.create({
 
   // Horas
   horasScroll: { marginBottom: 4 },
+  subtituloSecundario: { color: '#aaa', fontSize: 14, fontWeight: '600', marginTop: 14, marginBottom: 10 },
+  chipHoraSalidaActivo: { backgroundColor: '#7a0000', borderColor: '#cc0000' },
   chipHora: {
     borderWidth: 1, borderColor: '#3d0000', borderRadius: 10,
     paddingHorizontal: 20, paddingVertical: 12, marginRight: 10,
@@ -548,10 +745,19 @@ const styles = StyleSheet.create({
 
   // Estado seleccionada (compartido)
   mesaSeleccionada: { backgroundColor: '#cc0000', borderColor: '#ff4444' },
+  mesaOcupada: { backgroundColor: '#2a2a2a', borderColor: '#444', opacity: 0.5 },
   mesaId: { color: '#ccc', fontSize: 11, fontWeight: 'bold' },
   mesaIdSel: { color: '#fff' },
+  mesaIdOcupada: { color: '#666' },
   mesaAsientos: { color: '#777', fontSize: 9, marginTop: 1 },
   mesaAsientosSel: { color: '#ffcccc' },
+
+  // Verificando disponibilidad
+  verificandoRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginBottom: 12, paddingHorizontal: 4,
+  },
+  verificandoTexto: { color: '#cc0000', fontSize: 12 },
 
   // Leyenda
   leyenda: { flexDirection: 'row', justifyContent: 'center', gap: 24, marginTop: 16 },
@@ -604,4 +810,84 @@ const styles = StyleSheet.create({
   },
   btnDeshabilitado: { opacity: 0.6 },
   textoConfirmar: { color: '#fff', fontSize: 15, fontWeight: 'bold', letterSpacing: 2 },
+
+  // Tarjeta de estado tras crear reserva
+  reservaCreadaCard: {
+    marginTop: 20,
+    backgroundColor: '#2a0a0a',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#cc6600',
+  },
+  reservaCreadaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  reservaCreadaIcono: { fontSize: 22 },
+  reservaCreadaTitulo: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'PlayfairDisplay_700Bold',
+  },
+  estadoBadge: {
+    backgroundColor: '#3d1a00',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#cc6600',
+  },
+  estadoBadgeTexto: {
+    color: '#cc6600',
+    fontSize: 10,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 1,
+  },
+  reservaCreadaDesc: {
+    color: '#888',
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 16,
+  },
+  reservaCreadaDetalle: {
+    backgroundColor: '#1a0000',
+    borderRadius: 10,
+    padding: 14,
+    gap: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#3d0000',
+  },
+  reservaCreadaFila: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  reservaCreadaLabel: {
+    color: '#666',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    fontWeight: '600',
+  },
+  reservaCreadaValor: {
+    color: '#fff',
+    fontSize: 13,
+    fontFamily: 'PlayfairDisplay_700Bold',
+  },
+  btnNuevaReserva: {
+    borderWidth: 1,
+    borderColor: '#cc0000',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  btnNuevaReservaTexto: {
+    color: '#cc0000',
+    fontSize: 14,
+    fontFamily: 'PlayfairDisplay_700Bold',
+  },
 });

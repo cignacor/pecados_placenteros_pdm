@@ -58,6 +58,9 @@ export default function PerfilScreen() {
   const [passNueva, setPassNueva] = useState('');
   const [passConfirm, setPassConfirm] = useState('');
   const [cambiandoPass, setCambiandoPass] = useState(false);
+  const [verPassActual, setVerPassActual] = useState(false);
+  const [verPassNueva, setVerPassNueva] = useState(false);
+  const [verPassConfirm, setVerPassConfirm] = useState(false);
 
   // Estados métodos de pago
   const [tarjetas, setTarjetas] = useState([]);
@@ -65,7 +68,14 @@ export default function PerfilScreen() {
 
   // Estados pedidos
   const [pedidos, setPedidos] = useState([]);
-  const [cargandoPedidos, setCargandoPedidos] = useState(false);  const [numTarjeta, setNumTarjeta] = useState('');
+  const [cargandoPedidos, setCargandoPedidos] = useState(false);
+
+  // Estados reservas
+  const [reservas, setReservas] = useState([]);
+  const [cargandoReservas, setCargandoReservas] = useState(false);
+
+  // Estados tarjeta (formulario)
+  const [numTarjeta, setNumTarjeta] = useState('');
   const [titular, setTitular] = useState('');
   const [vencimiento, setVencimiento] = useState('');
   const [cvc, setCvc] = useState('');
@@ -133,6 +143,24 @@ export default function PerfilScreen() {
       // silencioso
     } finally {
       setCargandoPedidos(false);
+    }
+  }, [usuario]);
+
+  // ── Cargar reservas ──
+  const cargarReservas = useCallback(async () => {
+    if (!usuario) return;
+    setCargandoReservas(true);
+    try {
+      const q = query(collection(db, 'reservas'), where('uid', '==', usuario.uid));
+      const snap = await getDocs(q);
+      const lista = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
+      setReservas(lista);
+    } catch {
+      // silencioso
+    } finally {
+      setCargandoReservas(false);
     }
   }, [usuario]);
 
@@ -434,6 +462,49 @@ export default function PerfilScreen() {
           )}
         </Seccion>
 
+        {/* ── Mis reservas ── */}
+        <Seccion
+          icono="📅"
+          titulo="Mis reservas"
+          abierta={seccionAbierta === 'reservas'}
+          onToggle={() => {
+            toggleSeccion('reservas');
+            if (seccionAbierta !== 'reservas') cargarReservas();
+          }}
+        >
+          {cargandoReservas ? (
+            <ActivityIndicator color="#cc0000" style={{ marginVertical: 16 }} />
+          ) : reservas.length === 0 ? (
+            <View style={styles.mensajeVacio}>
+              <Text style={styles.mensajeVacioIcono}>📅</Text>
+              <Text style={styles.mensajeVacioTexto}>Aún no tienes reservas</Text>
+            </View>
+          ) : (
+            reservas.map(r => (
+              <View key={r.id} style={styles.pedidoItem}>
+                <View style={styles.pedidoEncabezado}>
+                  <Text style={styles.pedidoFecha}>{r.fecha}</Text>
+                  <View style={[
+                    styles.estadoBadge,
+                    r.estado === 'confirmado' && styles.estadoConfirmado,
+                    r.estado === 'cancelado' && styles.estadoCancelado,
+                  ]}>
+                    <Text style={styles.estadoTexto}>
+                      {(r.estado || 'en espera').toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.pedidoItems}>
+                  Mesa {r.mesa} · {r.hora} – {r.horaSalida || ''}
+                </Text>
+                <Text style={styles.pedidoTotal}>
+                  {r.comensales} persona{r.comensales !== 1 ? 's' : ''} · {r.asientos} asientos
+                </Text>
+              </View>
+            ))
+          )}
+        </Seccion>
+
         <Text style={[styles.grupoLabel, { marginTop: 20 }]}>CONFIGURACIÓN DE APP</Text>
 
         {/* ── Métodos de pago ── */}
@@ -492,32 +563,49 @@ export default function PerfilScreen() {
             <Text style={styles.modalTitulo}>Cambiar contraseña</Text>
 
             <Text style={styles.inputLabel}>Contraseña actual</Text>
-            <TextInput
-              style={styles.input}
-              value={passActual}
-              onChangeText={setPassActual}
-              secureTextEntry
-              placeholder="Tu contraseña actual"
-              placeholderTextColor="#555"
-            />
+            <View style={styles.inputConOjo}>
+              <TextInput
+                style={styles.inputOjo}
+                value={passActual}
+                onChangeText={setPassActual}
+                secureTextEntry={!verPassActual}
+                placeholder="Tu contraseña actual"
+                placeholderTextColor="#555"
+              />
+              <TouchableOpacity onPress={() => setVerPassActual(v => !v)} style={styles.ojoBtn}>
+                <Text style={styles.ojoIcono}>{verPassActual ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.inputLabel}>Nueva contraseña</Text>
-            <TextInput
-              style={styles.input}
-              value={passNueva}
-              onChangeText={setPassNueva}
-              secureTextEntry
-              placeholder="Mínimo 6 caracteres"
-              placeholderTextColor="#555"
-            />
+            <View style={styles.inputConOjo}>
+              <TextInput
+                style={styles.inputOjo}
+                value={passNueva}
+                onChangeText={setPassNueva}
+                secureTextEntry={!verPassNueva}
+                placeholder="Mínimo 6 caracteres"
+                placeholderTextColor="#555"
+              />
+              <TouchableOpacity onPress={() => setVerPassNueva(v => !v)} style={styles.ojoBtn}>
+                <Text style={styles.ojoIcono}>{verPassNueva ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.inputLabel}>Confirmar nueva contraseña</Text>
-            <TextInput
-              style={styles.input}
-              value={passConfirm}
-              onChangeText={setPassConfirm}
-              secureTextEntry
-              placeholder="Repite la nueva contraseña"
-              placeholderTextColor="#555"
-            />
+            <View style={styles.inputConOjo}>
+              <TextInput
+                style={styles.inputOjo}
+                value={passConfirm}
+                onChangeText={setPassConfirm}
+                secureTextEntry={!verPassConfirm}
+                placeholder="Repite la nueva contraseña"
+                placeholderTextColor="#555"
+              />
+              <TouchableOpacity onPress={() => setVerPassConfirm(v => !v)} style={styles.ojoBtn}>
+                <Text style={styles.ojoIcono}>{verPassConfirm ? '🙈' : '👁️'}</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.filaBotones}>
               <TouchableOpacity
@@ -635,7 +723,7 @@ export default function PerfilScreen() {
 // ─── Estilos ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1a0000' },
-  centrado: { flex: 1, backgroundColor: '#1a0000', alignItems: 'center', justifyContent: 'center' },
+  centrado: { flex: 1, backgroundColor: '#1b0101ff', alignItems: 'center', justifyContent: 'center' },
 
   // Header
   headerBg: {
@@ -691,6 +779,17 @@ const styles = StyleSheet.create({
     borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10,
     color: '#fff', fontSize: 14,
   },
+  inputConOjo: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#1a0000', borderWidth: 1, borderColor: '#3d0000',
+    borderRadius: 8, marginBottom: 0,
+  },
+  inputOjo: {
+    flex: 1, paddingHorizontal: 14, paddingVertical: 10,
+    color: '#fff', fontSize: 14,
+  },
+  ojoBtn: { paddingHorizontal: 12, paddingVertical: 10 },
+  ojoIcono: { fontSize: 16 },
 
   // Botones dentro de sección
   filaBotones: { flexDirection: 'row', gap: 10, marginTop: 16 },
@@ -728,6 +827,8 @@ const styles = StyleSheet.create({
   },
   estadoEntregado: { backgroundColor: '#1a6b1a' },
   estadoCancelado: { backgroundColor: '#555' },
+  estadoReservado: { backgroundColor: '#1a4a6b' },
+  estadoConfirmado: { backgroundColor: '#1a6b1a' },
   estadoTexto: { color: '#fff', fontSize: 10, fontWeight: '700', letterSpacing: 1 },
   pedidoItems: { color: '#ddd', fontSize: 13, marginBottom: 4 },
   pedidoTotal: { color: '#cc0000', fontSize: 13, fontWeight: '600', marginBottom: 2 },

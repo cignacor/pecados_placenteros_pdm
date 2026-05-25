@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diagramas — Pecados Placenteros</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a0000;
+      color: #fff;
+      font-family: Georgia, serif;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      color: #cc0000;
+      letter-spacing: 3px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+      letter-spacing: 1px;
+      margin-bottom: 48px;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 36px;
+    }
+
+    .tab-btn {
+      background: #2a0a0a;
+      color: #888;
+      border: 1px solid #3d0000;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: Georgia, serif;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover { border-color: #cc0000; color: #fff; }
+    .tab-btn.active { background: #cc0000; border-color: #cc0000; color: #fff; }
+
+    .diagram-section { display: none; }
+    .diagram-section.active { display: block; }
+
+    .diagram-card {
+      background: #2a0a0a;
+      border: 1px solid #3d0000;
+      border-radius: 16px;
+      padding: 32px 24px;
+      max-width: 1100px;
+      margin: 0 auto 32px auto;
+    }
+
+    .diagram-card h2 {
+      color: #cc0000;
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
+
+    .diagram-card p {
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 24px;
+    }
+
+    .mermaid-output {
+      background: #1a0000;
+      border-radius: 10px;
+      padding: 24px;
+      overflow-x: auto;
+      text-align: center;
+    }
+
+    .mermaid-output svg { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+
+  <h1>✦ PECADOS PLACENTEROS ✦</h1>
+  <p class="subtitle">DOCUMENTACIÓN TÉCNICA — DIAGRAMAS DEL SISTEMA</p>
+
+  <div class="tabs">
+    <button class="tab-btn active"  onclick="showTab('secuencia-pedido', this)">Secuencia · Pedido</button>
+    <button class="tab-btn"         onclick="showTab('secuencia-reserva', this)">Secuencia · Reserva</button>
+    <button class="tab-btn"         onclick="showTab('er', this)">Entidad-Relación</button>
+    <button class="tab-btn"         onclick="showTab('componentes', this)">Componentes</button>
+  </div>
+
+  <!-- ── 1: Secuencia Pedido ── -->
+  <div id="secuencia-pedido" class="diagram-section active">
+    <div class="diagram-card">
+      <h2>DIAGRAMA DE SECUENCIA</h2>
+      <p>Flujo principal: autenticación → explorar menú → agregar al carrito → confirmar pedido</p>
+      <div class="mermaid-output" id="out-secuencia-pedido"></div>
+    </div>
+  </div>
+
+  <!-- ── 2: Secuencia Reserva ── -->
+  <div id="secuencia-reserva" class="diagram-section">
+    <div class="diagram-card">
+      <h2>DIAGRAMA DE SECUENCIA</h2>
+      <p>Flujo de reserva: usuario solicita → admin gestiona → usuario ve estado actualizado</p>
+      <div class="mermaid-output" id="out-secuencia-reserva"></div>
+    </div>
+  </div>
+
+  <!-- ── 3: Entidad-Relación ── -->
+  <div id="er" class="diagram-section">
+    <div class="diagram-card">
+      <h2>DIAGRAMA ENTIDAD-RELACIÓN</h2>
+      <p>Modelo real de las colecciones en Cloud Firestore</p>
+      <div class="mermaid-output" id="out-er"></div>
+    </div>
+  </div>
+
+  <!-- ── 4: Componentes ── -->
+  <div id="componentes" class="diagram-section">
+    <div class="diagram-card">
+      <h2>DIAGRAMA DE COMPONENTES</h2>
+      <p>Arquitectura lógica con tecnologías usadas</p>
+      <div class="mermaid-output" id="out-componentes"></div>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#cc0000',
+        primaryTextColor: '#ffffff',
+        primaryBorderColor: '#cc0000',
+        lineColor: '#cc0000',
+        secondaryColor: '#2a0a0a',
+        tertiaryColor: '#3d0000',
+        background: '#1a0000',
+        mainBkg: '#2a0a0a',
+        nodeBorder: '#cc0000',
+        clusterBkg: '#2a0a0a',
+        titleColor: '#ffffff',
+        edgeLabelBackground: '#1a0000',
+        actorBkg: '#2a0a0a',
+        actorBorder: '#cc0000',
+        actorTextColor: '#ffffff',
+        actorLineColor: '#cc0000',
+        signalColor: '#cc0000',
+        signalTextColor: '#ffffff',
+        labelBoxBkgColor: '#2a0a0a',
+        labelBoxBorderColor: '#cc0000',
+        labelTextColor: '#ffffff',
+        loopTextColor: '#ffffff',
+        noteBorderColor: '#cc0000',
+        noteBkgColor: '#3d0000',
+        noteTextColor: '#ffffff',
+        activationBorderColor: '#cc0000',
+        activationBkgColor: '#3d0000',
+      },
+    });
+
+    // Definiciones de los diagramas
+    const diagrams = {
+      'secuencia-pedido': `sequenceDiagram
+    actor U as Usuario
+    participant App as App React Native
+    participant Auth as Firebase Auth
+    participant FS as Firestore
+    participant Cart as CartContext
+
+    U->>App: Ingresa email y contrasena
+    App->>Auth: signInWithEmailAndPassword()
+    Auth-->>App: userCredential
+    App->>FS: getDoc(users uid)
+    FS-->>App: name, email, role
+    App-->>U: Redirige a Home
+
+    U->>App: Abre Menu o Home
+    App->>FS: getDocs(products)
+    FS-->>App: Lista de productos
+    U->>App: Toca Agregar en un producto
+    App->>Cart: addItem(product)
+    Cart-->>App: items actualizado
+
+    U->>App: Abre carrito - Realizar Pedido
+    App-->>U: Muestra CheckoutModal
+    U->>App: Ingresa direccion y metodo de pago
+    App->>FS: addDoc(pedidos, datos del pedido)
+    FS-->>App: docRef confirmado
+    App->>Cart: clearCart()
+    App-->>U: Pedido confirmado`,
+
+      'secuencia-reserva': `sequenceDiagram
+    actor U as Usuario
+    actor A as Admin
+    participant App as App React Native
+    participant FS as Firestore
+
+    U->>App: Selecciona fecha, hora, mesa y comensales
+    App->>FS: getDocs(reservas) verificar disponibilidad
+    FS-->>App: Reservas existentes para esa fecha
+    App-->>U: Mesas ocupadas marcadas en el plano
+    U->>App: Confirma reserva
+    App->>FS: addDoc(reservas) estado en espera
+    FS-->>App: OK
+    App-->>U: Tarjeta de estado EN ESPERA visible
+
+    A->>App: Abre Panel Admin pestana Reservas
+    App->>FS: getDocs(reservas) where estado en espera
+    FS-->>App: Lista de reservas pendientes
+    A->>App: Toca Confirmar o Cancelar
+    App->>FS: updateDoc(reservas id) nuevo estado
+    FS-->>App: OK
+    App-->>A: Reserva desaparece de la lista
+
+    U->>App: Abre Perfil - Mis reservas
+    App->>FS: getDocs(reservas) where uid usuario
+    FS-->>App: Reservas con estado actualizado
+    App-->>U: Badge CONFIRMADO o CANCELADO`,
+
+      'er': `erDiagram
+    USERS {
+        string uid PK
+        string name
+        string email
+        string role
+        string createdAt
+        string telefono
+        string documento
+        string fechaNacimiento
+    }
+    PRODUCTS {
+        string id PK
+        string name
+        string price
+        string description
+        string category
+        string image
+        string featured
+        string featuredLabel
+    }
+    PEDIDOS {
+        string id PK
+        string uid FK
+        string email
+        string items
+        string total
+        string direccion
+        string datosExtra
+        string coordenadas
+        string metodoPago
+        string tarjeta
+        string estado
+        string creadoEn
+    }
+    RESERVAS {
+        string id PK
+        string uid FK
+        string email
+        string fecha
+        string hora
+        string horaSalida
+        string mesa
+        string asientos
+        string comensales
+        string estado
+        string creadoEn
+    }
+    TARJETAS {
+        string id PK
+        string uid FK
+        string ultimos4
+        string titular
+        string vencimiento
+        string creadoEn
+    }
+    USERS ||--o{ PEDIDOS : realiza
+    USERS ||--o{ RESERVAS : solicita
+    USERS ||--o{ TARJETAS : guarda
+    PEDIDOS }o--o{ PRODUCTS : contiene`,
+
+      'componentes': `graph TD
+    subgraph APP["APLICACION MOVIL - Expo React Native"]
+        subgraph NAV["Expo Router - Navegacion"]
+            ROOT["_layout.tsx - CartProvider y Fonts"]
+            TABS["tabs/_layout.tsx - Tab Bar"]
+            HOME["HomeScreen"]
+            MENU["MenuScreen"]
+            CART["CartScreen"]
+            RESERVAR["ReservarScreen"]
+            PERFIL["PerfilScreen"]
+            LOGIN["LoginScreen"]
+            REGISTER["RegisterScreen"]
+            ADMIN["AdminScreen"]
+        end
+        subgraph FEAT["src/features - Logica de negocio"]
+            AUTH_SVC["authService.js - register / login / logout"]
+            CART_CTX["CartContext.jsx - addItem / removeItem / total"]
+            CHECKOUT["CheckoutModal.jsx - Direccion y Mapa y Pago"]
+            PRODUCT_SVC["productService.js - CRUD productos"]
+        end
+    end
+    subgraph FIREBASE["Firebase - Backend"]
+        FBAUTH["Firebase Auth - Email y Password"]
+        FIRESTORE["Cloud Firestore - users / products / pedidos / reservas / tarjetas"]
+    end
+    subgraph EXTERNAL["APIs Externas"]
+        NOMINATIM["Nominatim OpenStreetMap - Geocodificacion"]
+        MAPVIEW["react-native-maps - MapView y Marker"]
+    end
+
+    ROOT --> TABS
+    ROOT --> LOGIN
+    ROOT --> REGISTER
+    ROOT --> ADMIN
+    TABS --> HOME
+    TABS --> MENU
+    TABS --> CART
+    TABS --> RESERVAR
+    TABS --> PERFIL
+    HOME --> CART_CTX
+    MENU --> CART_CTX
+    CART --> CART_CTX
+    CART --> CHECKOUT
+    CHECKOUT --> NOMINATIM
+    CHECKOUT --> MAPVIEW
+    CHECKOUT --> FIRESTORE
+    LOGIN --> AUTH_SVC
+    REGISTER --> AUTH_SVC
+    PERFIL --> AUTH_SVC
+    AUTH_SVC --> FBAUTH
+    AUTH_SVC --> FIRESTORE
+    ADMIN --> PRODUCT_SVC
+    ADMIN --> FIRESTORE
+    RESERVAR --> FIRESTORE
+    PERFIL --> FIRESTORE
+    MENU --> FIRESTORE
+    PRODUCT_SVC --> FIRESTORE`,
+    };
+
+    // Registro de cuáles ya fueron renderizados
+    const rendered = {};
+
+    async function renderDiagram(id) {
+      if (rendered[id]) return;
+      const container = document.getElementById('out-' + id);
+      if (!container) return;
+      try {
+        const { svg } = await mermaid.render('svg-' + id, diagrams[id]);
+        container.innerHTML = svg;
+        rendered[id] = true;
+      } catch (e) {
+        container.innerHTML = '<p style="color:#cc0000;font-size:13px;">Error al renderizar: ' + e.message + '</p>';
+      }
+    }
+
+    function showTab(id, btn) {
+      document.querySelectorAll('.diagram-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      btn.classList.add('active');
+      renderDiagram(id);
+    }
+
+    // Renderizar el primero al cargar
+    window.addEventListener('load', () => renderDiagram('secuencia-pedido'));
+  </script>
+
+</body>
+</html>

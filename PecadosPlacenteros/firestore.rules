@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper: verifica si el usuario autenticado es admin ──
+    function isAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── Helper: verifica que el usuario está autenticado ──
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // ── Helper: verifica que el documento pertenece al usuario ──
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    // ── USERS ──
+    // Cada usuario solo puede leer y actualizar su propio perfil.
+    // Solo el sistema (registro) puede crear.
+    match /users/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isAuth() && request.auth.uid == uid;
+      allow update: if isOwner(uid);
+      allow delete: if isAdmin();
+    }
+
+    // ── PRODUCTS ──
+    // Cualquier usuario autenticado puede leer el menú.
+    // Solo admin puede crear, editar o eliminar productos.
+    match /products/{productId} {
+      allow read:   if isAuth();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── PEDIDOS ──
+    // El usuario solo puede crear pedidos a su nombre y leer los suyos.
+    // Admin puede leer todos.
+    match /pedidos/{pedidoId} {
+      allow create: if isAuth()
+        && request.resource.data.uid == request.auth.uid;
+      allow read:   if isAuth()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── RESERVAS ──
+    // El usuario crea reservas a su nombre y lee las suyas.
+    // Admin puede leer todas y actualizar el estado.
+    match /reservas/{reservaId} {
+      allow create: if isAuth()
+        && request.resource.data.uid == request.auth.uid;
+      allow read:   if isAuth()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ── TARJETAS ──
+    // Solo el propio usuario puede gestionar sus tarjetas.
+    match /tarjetas/{tarjetaId} {
+      allow create: if isAuth()
+        && request.resource.data.uid == request.auth.uid;
+      allow read:   if isAuth()
+        && resource.data.uid == request.auth.uid;
+      allow update: if isAuth()
+        && resource.data.uid == request.auth.uid;
+      allow delete: if isAuth()
+        && resource.data.uid == request.auth.uid;
+    }
+  }
+}

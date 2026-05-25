@@ -173,7 +173,7 @@ export default function MenuScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a0000' },
+  container: { flex: 1, backgroundColor: '#1b0101ff' },
 
   header: {
     flexDirection: 'row', justifyContent: 'space-between',

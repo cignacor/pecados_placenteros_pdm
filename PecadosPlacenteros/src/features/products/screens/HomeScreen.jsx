@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  ImageBackground, TouchableOpacity, Image,
+  ImageBackground, TouchableOpacity, Image, Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCart } from '../../cart/context/CartContext';
@@ -27,9 +27,31 @@ const menuItems = [
   },
 ];
 
+const GUSTO_INFERNAL = {
+  id: 'gusto-infernal',
+  name: 'Gusto Infernal',
+  price: '32900 COP',
+  category: 'BURGERS',
+  image: 'https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=800',
+  description:
+    'La burger más temida del menú. Carne madurada 45 días, queso gouda ahumado fundido, mermelada secreta de chiles rojos y cebolla caramelizada al vino tinto. Solo para los que se atreven.',
+  ingredientes: [
+    { icono: '🥩', nombre: 'Doble carne madurada 45 días', detalle: '2 × 150 g, cocción media' },
+    { icono: '🧀', nombre: 'Queso gouda ahumado', detalle: 'Fundido en dos capas' },
+    { icono: '🌶️', nombre: 'Mermelada de chiles rojos', detalle: 'Receta secreta de la casa' },
+    { icono: '🧅', nombre: 'Cebolla caramelizada', detalle: 'Al vino tinto, 3 horas de cocción' },
+    { icono: '🥬', nombre: 'Lechuga mantequilla', detalle: 'Fresca, hoja entera' },
+    { icono: '🍅', nombre: 'Tomate asado', detalle: 'Confitado con hierbas provenzales' },
+    { icono: '🫙', nombre: 'Salsa infernal', detalle: 'Mayonesa ahumada + sriracha + ajo negro' },
+    { icono: '🍞', nombre: 'Pan brioche negro', detalle: 'Con carbón activado, tostado en mantequilla' },
+  ],
+  extras: ['Papas fritas de la casa', 'Bebida a elección'],
+};
+
 export default function HomeScreen() {
   const router = useRouter();
-  const { count } = useCart();
+  const { addItem, count } = useCart();
+  const [modalVisible, setModalVisible] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -62,7 +84,7 @@ export default function HomeScreen() {
             <Text style={styles.heroDesc}>
               Carne madurada, queso ahumado y nuestra mermelada secreta de chiles rojos.
             </Text>
-            <TouchableOpacity style={styles.heroButton}>
+            <TouchableOpacity style={styles.heroButton} onPress={() => setModalVisible(true)}>
               <Text style={styles.heroButtonText}>PEDIR AHORA 🔥</Text>
             </TouchableOpacity>
           </View>
@@ -113,12 +135,83 @@ export default function HomeScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      {/* ── Modal Gusto Infernal ── */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {/* Imagen hero */}
+            <ImageBackground
+              source={{ uri: GUSTO_INFERNAL.image }}
+              style={styles.modalHero}
+              imageStyle={{ borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+            >
+              <View style={styles.modalHeroOverlay}>
+                <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.modalCloseTxt}>✕</Text>
+                </TouchableOpacity>
+                <View style={styles.modalBadge}>
+                  <Text style={styles.modalBadgeTxt}>★ RECOMENDACIÓN DEL CHEF</Text>
+                </View>
+                <Text style={styles.modalNombre}>{GUSTO_INFERNAL.name}</Text>
+                <Text style={styles.modalPrecio}>{GUSTO_INFERNAL.price}</Text>
+              </View>
+            </ImageBackground>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {/* Descripción */}
+              <Text style={styles.modalDesc}>{GUSTO_INFERNAL.description}</Text>
+
+              {/* Ingredientes */}
+              <Text style={styles.modalSeccion}>LA RECETA</Text>
+              {GUSTO_INFERNAL.ingredientes.map((ing, i) => (
+                <View key={i} style={styles.ingredienteRow}>
+                  <Text style={styles.ingredienteIcono}>{ing.icono}</Text>
+                  <View style={styles.ingredienteInfo}>
+                    <Text style={styles.ingredienteNombre}>{ing.nombre}</Text>
+                    <Text style={styles.ingredienteDetalle}>{ing.detalle}</Text>
+                  </View>
+                </View>
+              ))}
+
+              {/* Incluye */}
+              <Text style={styles.modalSeccion}>INCLUYE</Text>
+              {GUSTO_INFERNAL.extras.map((e, i) => (
+                <View key={i} style={styles.extraRow}>
+                  <Text style={styles.extraPunto}>✦</Text>
+                  <Text style={styles.extraTexto}>{e}</Text>
+                </View>
+              ))}
+
+              {/* Botón agregar */}
+              <TouchableOpacity
+                style={styles.modalAddBtn}
+                onPress={() => {
+                  addItem({
+                    id: GUSTO_INFERNAL.id,
+                    name: GUSTO_INFERNAL.name,
+                    price: GUSTO_INFERNAL.price,
+                    image: GUSTO_INFERNAL.image,
+                    category: GUSTO_INFERNAL.category,
+                  });
+                  setModalVisible(false);
+                  router.push('/(tabs)/cart');
+                }}
+              >
+                <Text style={styles.modalAddTxt}>AGREGAR AL CARRITO  🔥</Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 32 }} />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a0000' },
+  container: { flex: 1, backgroundColor: '#1b0101ff' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', paddingHorizontal: 16, paddingTop: 50, paddingBottom: 12,
@@ -193,5 +286,94 @@ const styles = StyleSheet.create({
   clubIcon: {
     width: 56, height: 56, borderRadius: 28,
     backgroundColor: '#cc0000', alignItems: 'center', justifyContent: 'center',
+  },
+
+  // Modal Gusto Infernal
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#1a0000',
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    maxHeight: '92%',
+  },
+  modalHero: {
+    height: 220,
+  },
+  modalHeroOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    padding: 16,
+    justifyContent: 'flex-end',
+  },
+  modalCloseBtn: {
+    position: 'absolute', top: 14, right: 14,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  modalCloseTxt: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
+  modalBadge: {
+    backgroundColor: 'rgba(204,0,0,0.85)',
+    alignSelf: 'flex-start',
+    borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4,
+    marginBottom: 8,
+  },
+  modalBadgeTxt: { color: '#fff', fontSize: 10, fontFamily: 'PlayfairDisplay_700Bold', letterSpacing: 1 },
+  modalNombre: {
+    color: '#fff', fontSize: 28,
+    fontFamily: 'PlayfairDisplay_700Bold', lineHeight: 30,
+  },
+  modalPrecio: {
+    color: '#cc0000', fontSize: 18,
+    fontFamily: 'PlayfairDisplay_700Bold', marginTop: 4,
+  },
+  modalBody: {
+    paddingHorizontal: 20, paddingTop: 16,
+  },
+  modalDesc: {
+    color: '#ccc', fontSize: 14,
+    fontFamily: 'PlayfairDisplay_400Regular',
+    lineHeight: 22, marginBottom: 20,
+  },
+  modalSeccion: {
+    color: '#cc0000', fontSize: 11,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    letterSpacing: 2, marginBottom: 12, marginTop: 4,
+  },
+  ingredienteRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: 12, marginBottom: 12,
+    backgroundColor: '#2a0a0a', borderRadius: 10,
+    padding: 12, borderWidth: 1, borderColor: '#3d0000',
+  },
+  ingredienteIcono: { fontSize: 22, marginTop: 1 },
+  ingredienteInfo: { flex: 1 },
+  ingredienteNombre: {
+    color: '#fff', fontSize: 14,
+    fontFamily: 'PlayfairDisplay_700Bold',
+  },
+  ingredienteDetalle: {
+    color: '#888', fontSize: 12,
+    fontFamily: 'PlayfairDisplay_400Regular', marginTop: 2,
+  },
+  extraRow: {
+    flexDirection: 'row', alignItems: 'center',
+    gap: 10, marginBottom: 8,
+  },
+  extraPunto: { color: '#cc0000', fontSize: 12 },
+  extraTexto: { color: '#ccc', fontSize: 13 },
+  modalAddBtn: {
+    backgroundColor: '#cc0000', borderRadius: 12,
+    paddingVertical: 16, alignItems: 'center',
+    marginTop: 24,
+    shadowColor: '#cc0000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5, shadowRadius: 8, elevation: 6,
+  },
+  modalAddTxt: {
+    color: '#fff', fontSize: 15,
+    fontFamily: 'PlayfairDisplay_700Bold', letterSpacing: 1,
   },
 });
