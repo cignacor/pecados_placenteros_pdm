@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  pecados-placenteros:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pecados-placenteros-web
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      - CI=1
+      - EXPO_NO_DOTENV=0
+    volumes:
+      # Monta el código fuente para desarrollo (hot reload)
+      - .:/app
+      # Evita sobreescribir node_modules del contenedor con los del host
+      - /app/node_modules
+    restart: unless-stopped

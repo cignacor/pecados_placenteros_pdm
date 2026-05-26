@@ -5,12 +5,12 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAYhH8equ46px676yPmHgkUaBd9q3Nyzeo",         // clave pública de la API
-  authDomain: "pecadosplacenterospdm.firebaseapp.com",        // dominio de autenticación
-  projectId: "pecadosplacenterospdm",                         // ID del proyecto
-  storageBucket: "pecadosplacenterospdm.firebasestorage.app", // bucket de Storage
-  messagingSenderId: "809002572310",                          // ID para Cloud Messaging
-  appId: "1:809002572310:web:14956bfde9f51c0474f337"          // ID de la app web
+  apiKey: 'AIzaSyAYhH8equ46px676yPmHgkUaBd9q3Nyzeo',         // clave pública de la API
+  authDomain: 'pecadosplacenterospdm.firebaseapp.com',        // dominio de autenticación
+  projectId: 'pecadosplacenterospdm',                         // ID del proyecto
+  storageBucket: 'pecadosplacenterospdm.firebasestorage.app', // bucket de Storage
+  messagingSenderId: '809002572310',                          // ID para Cloud Messaging
+  appId: '1:809002572310:web:14956bfde9f51c0474f337',         // ID de la app web
 };
 
 

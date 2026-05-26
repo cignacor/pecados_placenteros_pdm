@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   SafeAreaView, KeyboardAvoidingView, Platform,
@@ -30,8 +30,8 @@ export default function RegisterScreen() {
     try {
       await registerWithEmail(name, email, password);
       router.replace('/(tabs)');
-    } catch (e) {
-      alert(e.message);
+    } catch (err) {
+      alert(err.message);
     } finally {
       setLoading(false);
     }

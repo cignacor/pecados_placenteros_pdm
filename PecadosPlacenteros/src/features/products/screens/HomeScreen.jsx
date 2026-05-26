@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  ImageBackground, TouchableOpacity, Image, Modal,
+  ImageBackground, TouchableOpacity, Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCart } from '../../cart/context/CartContext';

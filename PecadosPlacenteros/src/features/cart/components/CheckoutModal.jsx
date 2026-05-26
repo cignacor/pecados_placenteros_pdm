@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   TextInput, ScrollView, TouchableWithoutFeedback, Alert,
@@ -94,7 +94,7 @@ export default function CheckoutModal({ visible, onClose, total, onConfirm }) {
     } finally {
       setCargandoTarjetas(false);
     }
-  }, [usuario]);
+  }, [usuario, tarjetaSeleccionada]);
 
   useEffect(() => {
     if (visible) cargarTarjetas();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Image, Alert, ActivityIndicator,
@@ -9,7 +9,7 @@ import { useCart } from '../context/CartContext';
 import CheckoutModal from '../components/CheckoutModal';
 
 export default function CartScreen() {
-  const { items, removeItem, updateQuantity, clearCart, total, count } = useCart();
+  const { items, updateQuantity, clearCart, total, count } = useCart();
   const [checkoutVisible, setCheckoutVisible] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
@@ -48,10 +48,10 @@ export default function CartScreen() {
       Alert.alert(
         '¡Pedido confirmado! ✦',
         `Tu pedido está en proceso.\nEntrega en: ${address || 'ubicación en mapa'}`,
-        [{ text: '¡Perfecto!' }]
+        [{ text: '¡Perfecto!' }],
       );
-    } catch (e) {
-      Alert.alert('Error', `No se pudo guardar el pedido: ${e.message}`);
+    } catch (err) {
+      Alert.alert('Error', `No se pudo guardar el pedido: ${err.message}`);
     } finally {
       setGuardando(false);
     }

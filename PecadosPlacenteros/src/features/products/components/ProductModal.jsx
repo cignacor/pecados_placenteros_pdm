@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   View, Text, StyleSheet, Modal, Image,
   TouchableOpacity, ScrollView, TouchableWithoutFeedback,
@@ -6,8 +5,9 @@ import {
 import { useCart } from '../../cart/context/CartContext';
 
 export default function ProductModal({ product, visible, onClose }) {
-  if (!product) return null;
   const { addItem } = useCart();
+
+  if (!product) return null;
 
   const handleAdd = () => {
     addItem(product);

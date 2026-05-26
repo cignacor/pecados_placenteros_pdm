@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   View,
@@ -47,7 +47,7 @@ export default function LoginScreen() {
       } else {
         router.replace('/(tabs)');
       }
-    } catch (e) {
+    } catch {
       alert('Correo o contraseña incorrectos.');
     } finally {
       setLoading(false);

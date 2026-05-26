@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -75,11 +75,11 @@ const ZONAS = [
 ];
 
 // Lista plana de todas las mesas (para validación de comensales)
-const TODAS_LAS_MESAS = ZONAS.flatMap(z =>
-  z.tipo === 'fila'
-    ? z.mesas
-    : z.columnas.flat().filter(Boolean)
-);
+// const TODAS_LAS_MESAS = ZONAS.flatMap(z =>
+//   z.tipo === 'fila'
+//     ? z.mesas
+//     : z.columnas.flat().filter(Boolean)
+// );
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 function diasEnMes(anio, mes) {
@@ -210,7 +210,7 @@ export default function ReservarScreen() {
         snap.docs
           .map(d => d.data())
           .filter(d => seSolapa(d.hora, d.horaSalida || horasSalida(d.hora), horaSeleccionada))
-          .map(d => d.mesa)
+          .map(d => d.mesa),
       );
       setMesasOcupadas(ocupadas);
       if (mesaSeleccionada && ocupadas.has(mesaSeleccionada.id)) {
@@ -221,7 +221,7 @@ export default function ReservarScreen() {
     } finally {
       setVerificando(false);
     }
-  }, [anio, mes, diaSeleccionado, horaSeleccionada]);
+  }, [anio, mes, diaSeleccionado, horaSeleccionada, mesaSeleccionada]);
 
   useEffect(() => {
     consultarDisponibilidad();
@@ -237,7 +237,6 @@ export default function ReservarScreen() {
 
   // Miércoles = día 3 de la semana (0=Dom)
   const esMiercoles = (dia) => new Date(anio, mes, dia).getDay() === 3;
-  const diaDeshabilitado = (dia) => esPasado(dia) || esMiercoles(dia);
 
   const mesAnterior = () => {
     if (mes === 0) { setMes(11); setAnio(a => a - 1); }
@@ -268,7 +267,7 @@ export default function ReservarScreen() {
     if (comensales > mesaSeleccionada.asientos) {
       Alert.alert(
         'Capacidad excedida',
-        `La mesa ${mesaSeleccionada.id} tiene capacidad para ${mesaSeleccionada.asientos} personas.`
+        `La mesa ${mesaSeleccionada.id} tiene capacidad para ${mesaSeleccionada.asientos} personas.`,
       );
       return;
     }
@@ -293,14 +292,14 @@ export default function ReservarScreen() {
         .map(d => d.data())
         .some(d =>
           d.mesa === mesaSeleccionada.id &&
-          seSolapa(d.hora, d.horaSalida || horasSalida(d.hora), horaSeleccionada)
+          seSolapa(d.hora, d.horaSalida || horasSalida(d.hora), horaSeleccionada),
         );
       if (yaOcupada) {
         setMesasOcupadas(prev => new Set([...prev, mesaSeleccionada.id]));
         setMesaSeleccionada(null);
         Alert.alert(
           'Mesa no disponible',
-          `La mesa ${mesaSeleccionada.id} ya tiene una reserva activa en ese horario. Por favor elige otra.`
+          `La mesa ${mesaSeleccionada.id} ya tiene una reserva activa en ese horario. Por favor elige otra.`,
         );
         return;
       }
@@ -482,7 +481,7 @@ export default function ReservarScreen() {
                     ocupada={mesasOcupadas.has(mesa.id)}
                     onPress={() => toggleMesa(mesa)}
                   />
-                : <View key={`esp-${i}`} style={styles.espacioMesa} />
+                : <View key={`esp-${i}`} style={styles.espacioMesa} />,
             )}
           </View>
 

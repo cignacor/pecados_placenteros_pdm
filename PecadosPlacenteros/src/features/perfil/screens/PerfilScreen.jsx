@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   ImageBackground, TextInput, Alert, ActivityIndicator, Modal,
@@ -109,7 +109,7 @@ export default function PerfilScreen() {
         setDocumento(data.documento || '');
         setFechaNacimiento(data.fechaNacimiento || '');
       }
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudo cargar el perfil.');
     } finally {
       setCargando(false);
@@ -123,7 +123,7 @@ export default function PerfilScreen() {
       const q = query(collection(db, 'tarjetas'), where('uid', '==', usuario.uid));
       const snap = await getDocs(q);
       setTarjetas(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    } catch (e) {
+    } catch {
       // silencioso
     }
   }, [usuario]);
@@ -139,7 +139,7 @@ export default function PerfilScreen() {
         .map(d => ({ id: d.id, ...d.data() }))
         .sort((a, b) => new Date(b.creadoEn) - new Date(a.creadoEn));
       setPedidos(lista);
-    } catch (e) {
+    } catch {
       // silencioso
     } finally {
       setCargandoPedidos(false);
@@ -187,7 +187,7 @@ export default function PerfilScreen() {
       setPerfil(prev => ({ ...prev, name: nombre.trim(), telefono, documento, fechaNacimiento }));
       setEditando(false);
       Alert.alert('¡Listo!', 'Datos actualizados correctamente.');
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudieron guardar los cambios.');
     } finally {
       setGuardando(false);
@@ -212,8 +212,8 @@ export default function PerfilScreen() {
       setModalPassword(false);
       setPassActual(''); setPassNueva(''); setPassConfirm('');
       Alert.alert('¡Listo!', 'Contraseña actualizada correctamente.');
-    } catch (e) {
-      if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+    } catch (err) {
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         Alert.alert('Contraseña incorrecta', 'La contraseña actual no es correcta.');
       } else {
         Alert.alert('Error', 'No se pudo cambiar la contraseña. Inténtalo de nuevo.');
@@ -256,7 +256,7 @@ export default function PerfilScreen() {
       setNumTarjeta(''); setTitular(''); setVencimiento(''); setCvc('');
       await cargarTarjetas();
       Alert.alert('¡Listo!', 'Tarjeta guardada correctamente.');
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudo guardar la tarjeta.');
     } finally {
       setGuardandoTarjeta(false);

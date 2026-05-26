@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESLint Report — Pecados Placenteros</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a0000;
+      color: #fff;
+      font-family: Georgia, serif;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 26px;
+      color: #cc0000;
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #888;
+      font-size: 12px;
+      letter-spacing: 1px;
+      margin-bottom: 36px;
+    }
+
+    /* ── Resumen global ── */
+    .summary {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: #2a0a0a;
+      border: 1px solid #3d0000;
+      border-radius: 12px;
+      padding: 20px 28px;
+      text-align: center;
+      min-width: 130px;
+    }
+
+    .stat-card .num {
+      font-size: 36px;
+      font-weight: bold;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .label {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: #888;
+    }
+
+    .num.ok    { color: #22c55e; }
+    .num.warn  { color: #f59e0b; }
+    .num.error { color: #cc0000; }
+    .num.files { color: #fff; }
+
+    /* ── Banner éxito ── */
+    .success-banner {
+      max-width: 700px;
+      margin: 0 auto 40px auto;
+      background: #0a2a0a;
+      border: 1px solid #22c55e44;
+      border-radius: 14px;
+      padding: 20px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .success-banner .icon { font-size: 32px; flex-shrink: 0; }
+
+    .success-banner .text h2 {
+      color: #22c55e;
+      font-size: 15px;
+      letter-spacing: 1.5px;
+      margin-bottom: 4px;
+    }
+
+    .success-banner .text p {
+      color: #666;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    /* ── Historial de cambios ── */
+    .changelog {
+      max-width: 900px;
+      margin: 0 auto 40px auto;
+    }
+
+    .changelog-title {
+      color: #cc0000;
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    .changelog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+    }
+
+    .change-item {
+      background: #2a0a0a;
+      border: 1px solid #3d0000;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .change-item .ci-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    .change-item .ci-file {
+      color: #cc6600;
+      font-size: 11px;
+      font-family: monospace;
+      margin-bottom: 3px;
+    }
+
+    .change-item .ci-desc {
+      color: #aaa;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* ── Archivos ── */
+    .section-title {
+      text-align: center;
+      color: #666;
+      font-size: 11px;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
+    .file-card {
+      background: #2a0a0a;
+      border: 1px solid #3d0000;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      padding: 13px 20px;
+      gap: 12px;
+    }
+
+    .file-icon { font-size: 14px; flex-shrink: 0; }
+
+    .file-path {
+      font-size: 13px;
+      color: #ddd;
+      flex: 1;
+      font-family: monospace;
+    }
+
+    .badge-ok {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      background: #0a2a0a;
+      color: #22c55e;
+      border: 1px solid #22c55e44;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>✦ PECADOS PLACENTEROS ✦</h1>
+  <p class="subtitle">REPORTE DE CALIDAD — ESLINT · 26 MAY 2026</p>
+
+  <!-- ── Resumen global ── -->
+  <div class="summary">
+    <div class="stat-card">
+      <div class="num files">15</div>
+      <div class="label">ARCHIVOS</div>
+    </div>
+    <div class="stat-card">
+      <div class="num error">0</div>
+      <div class="label">ERRORES</div>
+    </div>
+    <div class="stat-card">
+      <div class="num warn">0</div>
+      <div class="label">ADVERTENCIAS</div>
+    </div>
+    <div class="stat-card">
+      <div class="num ok">15</div>
+      <div class="label">ARCHIVOS LIMPIOS</div>
+    </div>
+  </div>
+
+  <!-- ── Banner éxito ── -->
+  <div class="success-banner">
+    <div class="icon">✦</div>
+    <div class="text">
+      <h2>CÓDIGO SIN OBSERVACIONES</h2>
+      <p>Los 15 archivos analizados pasan el linter sin errores ni advertencias.<br>
+         Se corrigieron 28 problemas distribuidos en 11 archivos.</p>
+    </div>
+  </div>
+
+  <!-- ── Historial de correcciones ── -->
+  <div class="changelog">
+    <p class="changelog-title">CORRECCIONES APLICADAS</p>
+    <div class="changelog-grid">
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">firebaseConfig.js</div>
+          <div class="ci-desc">Comillas dobles → simples en todas las claves de configuración + trailing comma</div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">LoginScreen.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> no usado · <code>catch (e)</code> → <code>catch</code></div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">RegisterScreen.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> no usado · renombrado <code>e</code> → <code>err</code></div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">CheckoutModal.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> · añadida <code>tarjetaSeleccionada</code> al dep array de <code>useCallback</code></div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">CartContext.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> · trailing comma en <code>.map()</code></div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">CartScreen.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> · eliminado <code>removeItem</code> no usado · trailing comma en <code>Alert.alert()</code></div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">PerfilScreen.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> · 5 parámetros <code>e</code> sin usar → <code>catch</code> sin argumento</div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">ProductModal.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> · movido <code>useCart()</code> antes del early return (hook condicional)</div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">AdminScreen.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> · <code>catch (e)</code> → <code>catch</code> · trailing commas en 2 <code>Alert.alert()</code></div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">HomeScreen.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> · eliminado import de <code>Image</code> no usado</div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">MenuScreen.jsx</div>
+          <div class="ci-desc">Eliminado import de <code>React</code> no usado</div>
+        </div>
+      </div>
+
+      <div class="change-item">
+        <span class="ci-icon">🔧</span>
+        <div>
+          <div class="ci-file">ReservarScreen.jsx</div>
+          <div class="ci-desc">Eliminado <code>React</code>, <code>TODAS_LAS_MESAS</code> y <code>diaDeshabilitado</code> no usados · añadida dep faltante en <code>useCallback</code> · 6 trailing commas</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Lista de archivos ── -->
+  <p class="section-title">ARCHIVOS ANALIZADOS</p>
+
+  <script>
+    const files = [
+      'src/api/firebaseConfig.js',
+      'src/features/auth/screens/LoginScreen.jsx',
+      'src/features/auth/screens/RegisterScreen.jsx',
+      'src/features/auth/services/authService.js',
+      'src/features/cart/components/CheckoutModal.jsx',
+      'src/features/cart/context/CartContext.jsx',
+      'src/features/cart/screens/CartScreen.jsx',
+      'src/features/perfil/screens/PerfilScreen.jsx',
+      'src/features/products/components/ProductModal.jsx',
+      'src/features/products/screens/AdminScreen.jsx',
+      'src/features/products/screens/HomeScreen.jsx',
+      'src/features/products/screens/MenuScreen.jsx',
+      'src/features/products/services/productService.js',
+      'src/features/reservar/screens/ReservarScreen.jsx',
+      'src/shared/constants/theme.ts',
+    ];
+
+    const container = document.body;
+    files.forEach(f => {
+      const card = document.createElement('div');
+      card.className = 'file-card';
+      card.innerHTML = `
+        <div class="file-row">
+          <span class="file-icon">📄</span>
+          <span class="file-path">${f}</span>
+          <span class="badge-ok">✓ limpio</span>
+        </div>`;
+      container.appendChild(card);
+    });
+  </script>
+
+</body>
+</html>

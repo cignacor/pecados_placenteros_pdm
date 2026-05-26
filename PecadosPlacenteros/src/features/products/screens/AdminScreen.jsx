@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
   TouchableOpacity, Switch, ActivityIndicator, Alert, Image,
@@ -68,7 +68,7 @@ export default function AdminScreen() {
         .map((d) => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (a.fecha > b.fecha ? 1 : a.fecha < b.fecha ? -1 : 0));
       setReservas(lista);
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudieron cargar las reservas.');
     } finally {
       setLoadingReservas(false);
@@ -95,7 +95,7 @@ export default function AdminScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -120,7 +120,7 @@ export default function AdminScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
